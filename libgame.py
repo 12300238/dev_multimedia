@@ -502,13 +502,25 @@ class Ninja(Element):
         self.images: Dict[str, pygame.Surface] = {}
 
         #animation statique
+        for pos in range(9, 10):
+            img_name = f"persoStill{pos-9}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 3 * h, w, h)
+            self.images[img_name] = merged_surface
+            Element.register_image(img_name, merged_surface)
+
+            flip_img_name = f"persoFlipStill{pos-9}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 3 * h, w, h)
+            merged_surface = pygame.transform.flip(merged_surface, True, False)
+            self.images[flip_img_name] = merged_surface
+            Element.register_image(flip_img_name, merged_surface)
+
         for pos in range(8):
-            img_name = f"persoStill{pos}"
+            img_name = f"persoStillSword{pos}"
             merged_surface = pygame.Surface.subsurface(base, pos * w, 0 * h, w, h)
             self.images[img_name] = merged_surface
             Element.register_image(img_name, merged_surface)
 
-            flip_img_name = f"persoFlipStill{pos}"
+            flip_img_name = f"persoFlipStillSword{pos}"
             merged_surface = pygame.Surface.subsurface(base, pos * w, 0 * h, w, h)
             merged_surface = pygame.transform.flip(merged_surface, True, False)
             self.images[flip_img_name] = merged_surface
@@ -630,11 +642,18 @@ class Ninja(Element):
 
         #animation d'attente
         else:
-            state = int(self.state % 8)
-            if self.face == 0:
-                base = "persoStill"
-            else:
-                base = "persoFlipStill"
+            if self.epee == False:
+                state = int(self.state % 1)
+                if self.face == 0:
+                    base = "persoStill"
+                else:
+                    base = "persoFlipStill"
+            else :
+                state = int(self.state % 8)
+                if self.face == 0:
+                    base = "persoStillSword"
+                else:
+                    base = "persoFlipStillSword"
 
         name = base + str(state)
         screen.blit(self.images[name], self.rect)
