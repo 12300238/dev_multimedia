@@ -512,7 +512,7 @@ class Ninja(Element):
             merged_surface = pygame.Surface.subsurface(base, pos * w, 0 * h, w, h)
             merged_surface = pygame.transform.flip(merged_surface, True, False)
             self.images[flip_img_name] = merged_surface
-            Element.register_image(img_name, merged_surface)
+            Element.register_image(flip_img_name, merged_surface)
 
         # animation de marche    
         for pos in range(8):
@@ -540,6 +540,32 @@ class Ninja(Element):
             self.images[flip_img_name] = merged_surface
             Element.register_image(flip_img_name, merged_surface)
         
+        # animation dégainer
+        for pos in range(5):
+            img_name = f"degainer{pos}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 1 * h, w, h)
+            self.images[img_name] = merged_surface
+            Element.register_image(img_name, merged_surface)
+
+            flip_img_name = f"degainerFlip{pos}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 1 * h, w, h)
+            merged_surface = pygame.transform.flip(merged_surface, True, False)
+            self.images[flip_img_name] = merged_surface
+            Element.register_image(flip_img_name, merged_surface)
+
+        # animation rengainer
+        for pos in range(6,10):
+            img_name = f"rengainer{pos-6}" # -6 car le contage commence à 6 et que l'apelle des sprite vas apeller rengainer0
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 1 * h, w, h)
+            self.images[img_name] = merged_surface
+            Element.register_image(img_name, merged_surface)
+
+            flip_img_name = f"rengainerFlip{pos-6}" # -6 car le contage commence à 6 et que l'apelle des sprite vas apeller rengainerFlip0
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 1 * h, w, h)
+            merged_surface = pygame.transform.flip(merged_surface, True, False)
+            self.images[flip_img_name] = merged_surface
+            Element.register_image(flip_img_name, merged_surface)
+        
         self.image = self.images["persoStill0"]
         self.last_state: int = 0
         self.distance: float = 0
@@ -554,31 +580,55 @@ class Ninja(Element):
         self.gravity = 0
         self.speedbase = 20
         self.state = 0
-        self.face = 0
+        self.face = 0 #la direction dans la qu'elle est tourner le perso
         self.run = False
+        self.degainer = False #si il faut que l'épee soit daigainer
+        self.epee = False #si l'épée est dégainer
         self.finalize()
 
     def do_paint(self, screen):
-        if int(self.vx) < 0 and int(self.vx) >= -self.speedbase:
-            state = int((self.state % 16) / 2) #calcule qui divise la vitesse des annimation par deux
+
+        #animation dégainer
+        if self.degainer == True and self.epee == False:
+            state = int(self.state % 5)
+            if self.face == 0:
+                base = "degainer"
+            else:
+                base = "degainerFlip"
+            if state == 4: # quand les annimations sont finis on dit que l'épee est sortie
+                self.epee = True
+
+        #animation rengainer
+        elif self.degainer == False and self.epee == True:
+            state = int(self.state % 4)
+            if self.face == 0:
+                base = "rengainer"
+            else:
+                base = "rengainerFlip"
+            if state == 3: # quand les annimations sont finis on dit que l'épee est rentrer
+                self.epee = False
+
+        #annimation de marche
+        elif int(self.vx) < 0 and int(self.vx) >= -self.speedbase:
+            state = int((self.state % 16) / 2) #calcule qui divise la vitesse des annimations par deux
             base = "persoWalk"
             self.face = 0
-
         elif int(self.vx) > 0 and int(self.vx) <= self.speedbase:
-            state = int((self.state % 16) / 2)
+            state = int((self.state % 16) / 2) #calcule qui divise la vitesse des annimations par deux
             base = "persoFlipWalk"
             self.face = 1
 
-        elif int(self.vx) < -self.speedbase and int(self.vx) >= (-self.speedbase * 2):
+        #annimation de course
+        elif int(self.vx) < -self.speedbase and int(self.vx) >= (-self.speedbase * 5):
             state = int(self.state % 10)
             base = "persoRun"
             self.face = 0
-
-        elif int(self.vx) > self.speedbase and int(self.vx) <= (self.speedbase * 2):
+        elif int(self.vx) > self.speedbase and int(self.vx) <= (self.speedbase * 5):
             state = int(self.state % 10)
             base = "persoFlipRun"
             self.face = 1
-            
+
+        #animation d'attente
         else:
             state = int(self.state % 8)
             if self.face == 0:
@@ -590,29 +640,50 @@ class Ninja(Element):
         screen.blit(self.images[name], self.rect)
 
     def do_event(self, event):
+        #touche enfoncer
+        if (self.degainer == True and self.epee == False) or (self.degainer == False and self.epee == True): #on ne fais rien si l'épée est en cour de dégainement ou de rengainement
+            return True
         
         if event.type == pygame.KEYDOWN:
             speed_base = self.speedbase
+
+            #mode cource
             if event.key == pygame.K_UP:
                 self.run = True
+
+            #degainer/rengainer
+            if event.key == pygame.K_a:
+                self.vx = 0
+                if self.degainer == False:
+                    self.degainer = True
+                else:
+                    self.degainer = False
+                self.state = 0
+                print('action')
+                print(f"self.degainer: {self.degainer}")
+                print(f"self.epee: {self.epee}")
             
+            #quitter le jeux
             if event.key == pygame.K_ESCAPE:
                 return False
             
+            #aller à gauche
             if event.key == pygame.K_LEFT:
                 if self.run == True:
-                    self.vx = -speed_base * 2 
+                    self.vx = -speed_base * 5
                 else:
                     self.vx = -speed_base
                     self.dontadjust = True
-
+            
+            #aller à doirte
             if event.key == pygame.K_RIGHT:
                 if self.run == True:
-                    self.vx = speed_base * 2
+                    self.vx = speed_base * 5
                 else:
                     self.vx = speed_base
                     self.dontadjust = True
 
+            #s'arreter
             if event.key == pygame.K_SPACE:
                 self.vx = 0
                 self.dontadjust = True
