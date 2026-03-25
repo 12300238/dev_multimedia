@@ -500,16 +500,34 @@ class Ninja(Element):
         w, h = rect.size
         super().__init__(rect)
         self.images: Dict[str, pygame.Surface] = {}
+
+        #image statique
         for pos in range(8):
             img_name = f"persoStill{pos}"
             merged_surface = pygame.Surface.subsurface(base, pos * w, 0 * h, w, h)
             self.images[img_name] = merged_surface
             Element.register_image(img_name, merged_surface)
+
+            flip_img_name = f"persoFlipStill{pos}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 0 * h, w, h)
+            merged_surface = pygame.transform.flip(merged_surface, True, False)
+            self.images[flip_img_name] = merged_surface
+            Element.register_image(img_name, merged_surface)
+
+        # image de marche    
         for pos in range(10):
             img_name = f"persoWalk{pos}"
-            merged_surface = pygame.Surface.subsurface(base, pos * w, 8 * h, w, h)
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 6 * h, w, h)
             self.images[img_name] = merged_surface
             Element.register_image(img_name, merged_surface)
+
+            flip_img_name = f"persoFlipWalk{pos}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 6 * h, w, h)
+            merged_surface = pygame.transform.flip(merged_surface, True, False)
+            self.images[flip_img_name] = merged_surface
+            Element.register_image(flip_img_name, merged_surface)
+
+        
         self.image = self.images["persoStill0"]
         self.last_state: int = 0
         self.distance: float = 0
@@ -525,17 +543,27 @@ class Ninja(Element):
         self.speedbase = 20
         self.finalize()
         self.state = 0
+        self.face = 0
 
     def do_paint(self, screen):
         if self.vx < 0:
-            state = int(self.state % 10)
+            state = int((self.state % 16) / 2) #calcule qui divise la vitesse des annimation par deux
+            print(state)
             base = "persoWalk"
+            self.face = 0
         elif self.vx > 0:
-            state = int(self.state % 10)
-            base = "persoWalk"
+            state = int((self.state % 16) / 2)
+            print(state)
+            base = "persoFlipWalk"
+            self.face = 1
         else:
             state = int(self.state % 8)
-            base = "persoStill"
+            if self.face == 0:
+                base = "persoStill"
+            elif self.face == 1:
+                base = "persoFlipStill"
+            else:
+                base = "persoWalk"
         name = base + str(state)
         screen.blit(self.images[name], self.rect)
 
