@@ -501,7 +501,7 @@ class Ninja(Element):
         super().__init__(rect)
         self.images: Dict[str, pygame.Surface] = {}
 
-        #image statique
+        #animation statique
         for pos in range(8):
             img_name = f"persoStill{pos}"
             merged_surface = pygame.Surface.subsurface(base, pos * w, 0 * h, w, h)
@@ -514,8 +514,8 @@ class Ninja(Element):
             self.images[flip_img_name] = merged_surface
             Element.register_image(img_name, merged_surface)
 
-        # image de marche    
-        for pos in range(10):
+        # animation de marche    
+        for pos in range(8):
             img_name = f"persoWalk{pos}"
             merged_surface = pygame.Surface.subsurface(base, pos * w, 6 * h, w, h)
             self.images[img_name] = merged_surface
@@ -527,6 +527,18 @@ class Ninja(Element):
             self.images[flip_img_name] = merged_surface
             Element.register_image(flip_img_name, merged_surface)
 
+        # animation de cource
+        for pos in range(10):
+            img_name = f"persoRun{pos}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 8 * h, w, h)
+            self.images[img_name] = merged_surface
+            Element.register_image(img_name, merged_surface)
+
+            flip_img_name = f"persoFlipRun{pos}"
+            merged_surface = pygame.Surface.subsurface(base, pos * w, 8 * h, w, h)
+            merged_surface = pygame.transform.flip(merged_surface, True, False)
+            self.images[flip_img_name] = merged_surface
+            Element.register_image(flip_img_name, merged_surface)
         
         self.image = self.images["persoStill0"]
         self.last_state: int = 0
@@ -541,48 +553,72 @@ class Ninja(Element):
         self.elasticity = 0
         self.gravity = 0
         self.speedbase = 20
-        self.finalize()
         self.state = 0
         self.face = 0
+        self.run = False
+        self.finalize()
 
     def do_paint(self, screen):
-        if self.vx < 0:
+        if int(self.vx) < 0 and int(self.vx) >= -self.speedbase:
             state = int((self.state % 16) / 2) #calcule qui divise la vitesse des annimation par deux
-            print(state)
             base = "persoWalk"
             self.face = 0
-        elif self.vx > 0:
+
+        elif int(self.vx) > 0 and int(self.vx) <= self.speedbase:
             state = int((self.state % 16) / 2)
-            print(state)
             base = "persoFlipWalk"
             self.face = 1
+
+        elif int(self.vx) < -self.speedbase and int(self.vx) >= (-self.speedbase * 2):
+            state = int(self.state % 10)
+            base = "persoRun"
+            self.face = 0
+
+        elif int(self.vx) > self.speedbase and int(self.vx) <= (self.speedbase * 2):
+            state = int(self.state % 10)
+            base = "persoFlipRun"
+            self.face = 1
+            
         else:
             state = int(self.state % 8)
             if self.face == 0:
                 base = "persoStill"
-            elif self.face == 1:
-                base = "persoFlipStill"
             else:
-                base = "persoWalk"
+                base = "persoFlipStill"
+
         name = base + str(state)
         screen.blit(self.images[name], self.rect)
 
     def do_event(self, event):
-        speed_base = self.speedbase
-        if event.key == pygame.K_ESCAPE:
-            return False
         
-        if event.key == pygame.K_LEFT:
-            self.vx = -speed_base
-            self.dontadjust = True
+        if event.type == pygame.KEYDOWN:
+            speed_base = self.speedbase
+            if event.key == pygame.K_UP:
+                self.run = True
+            
+            if event.key == pygame.K_ESCAPE:
+                return False
+            
+            if event.key == pygame.K_LEFT:
+                if self.run == True:
+                    self.vx = -speed_base * 2 
+                else:
+                    self.vx = -speed_base
+                    self.dontadjust = True
 
-        if event.key == pygame.K_RIGHT:
-            self.vx = speed_base
-            self.dontadjust = True
+            if event.key == pygame.K_RIGHT:
+                if self.run == True:
+                    self.vx = speed_base * 2
+                else:
+                    self.vx = speed_base
+                    self.dontadjust = True
 
-        if event.key == pygame.K_SPACE:
-            self.vx = 0
-            self.dontadjust = True
+            if event.key == pygame.K_SPACE:
+                self.vx = 0
+                self.dontadjust = True
+        
+        elif event.type == pygame.KEYUP and event.key == pygame.K_UP:
+            self.run = False
         return True
     
     def do_accelerate(self, etime):

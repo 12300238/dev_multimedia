@@ -15,7 +15,7 @@ def game_init(scene: libgame.Scene) -> List[libgame.Element]:
     return objects
 
 def game_test(objects: List[libgame.Element], event: pygame.event.Event):
-    if event.type == pygame.KEYDOWN:
+    if event.type in (pygame.KEYDOWN, pygame.KEYUP):
         for obj in objects:
             res = obj.do_event(event)
             if not res:
